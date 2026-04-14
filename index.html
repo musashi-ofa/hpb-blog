@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HPBブログ自動生成</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Hiragino Sans', 'Yu Gothic', sans-serif;
+    background: #f5f5f5;
+    color: #1a1a1a;
+    min-height: 100vh;
+    padding: 1.5rem 1rem 3rem;
+  }
+
+  .container {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .badge {
+    display: inline-block;
+    background: #E6F1FB;
+    color: #0C447C;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 12px;
+    border-radius: 20px;
+    border: 1px solid #B5D4F4;
+    margin-bottom: 0.75rem;
+  }
+
+  h1 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #1a1a1a;
+    margin-bottom: 1.75rem;
+  }
+
+  /* APIキー設定UIは非表示（HTMLに直接埋め込み済み） */
+
+  /* カード */
+  .card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #e8e8e8;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .step-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #888;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .hint {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 10px;
+    line-height: 1.6;
+  }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .field-wrap { display: flex; flex-direction: column; gap: 4px; }
+  .field-label { font-size: 11px; color: #888; }
+
+  input[type="text"] {
+    width: 100%;
+    height: 42px;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    color: #1a1a1a;
+    font-size: 14px;
+    padding: 0 12px;
+    font-family: inherit;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus { outline: none; border-color: #185FA5; box-shadow: 0 0 0 2px #E6F1FB; }
+
+  .preview-box {
+    background: #f8f8f8;
+    border-radius: 8px;
+    border: 1px solid #e8e8e8;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #888;
+    margin-top: 12px;
+    line-height: 1.6;
+  }
+  .preview-box .preview-text { color: #1a1a1a; font-weight: 600; }
+
+  /* カテゴリ */
+  .cat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .cat-btn {
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    color: #1a1a1a;
+    font-size: 13px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.15s;
+  }
+  .cat-btn:hover { background: #f5f5f5; }
+  .cat-btn.active { border: 2px solid #185FA5; background: #E6F1FB; }
+  .cat-btn.active .cat-name { color: #0C447C; }
+  .cat-btn.active .cat-desc { color: #185FA5; }
+  .cat-icon { font-size: 16px; margin-right: 4px; }
+  .cat-name { font-weight: 700; display: block; margin-bottom: 3px; font-size: 13px; }
+  .cat-desc { font-size: 11px; color: #888; display: block; line-height: 1.4; }
+
+  /* ヒント例 */
+  .example-section { display: none; margin-top: 12px; }
+  .example-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .ex-chip {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    border: 1px solid #e0e0e0;
+    background: #f5f5f5;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .ex-chip:hover { border-color: #185FA5; color: #185FA5; background: #E6F1FB; }
+
+  /* テキストエリア */
+  textarea {
+    width: 100%;
+    min-height: 110px;
+    resize: vertical;
+    border-radius: 8px;
+    border: 1px solid #e0e0e0;
+    background: #fff;
+    color: #1a1a1a;
+    font-size: 14px;
+    padding: 10px 12px;
+    font-family: inherit;
+    line-height: 1.7;
+    transition: border-color 0.15s;
+  }
+  textarea:focus { outline: none; border-color: #185FA5; box-shadow: 0 0 0 2px #E6F1FB; }
+
+  .char-hint { text-align: right; font-size: 11px; color: #aaa; margin-top: 5px; }
+
+  /* 音声入力 */
+  .voice-row { display: flex; align-items: center; gap: 10px; margin-top: 12px; }
+  .vbtn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 16px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #444;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .vbtn:hover { background: #f5f5f5; }
+  .vbtn.rec { border-color: #A32D2D; background: #FCEBEB; color: #A32D2D; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: #A32D2D; animation: blink 1s infinite; display: inline-block; }
+  @keyframes blink { 0%,100%{opacity:1;}50%{opacity:0.2;} }
+  .vstatus { font-size: 12px; color: #888; }
+
+  /* 生成ボタン */
+  .gen-btn {
+    width: 100%;
+    padding: 15px;
+    border-radius: 12px;
+    border: none;
+    background: #185FA5;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 1rem;
+    transition: background 0.15s;
+    font-family: inherit;
+  }
+  .gen-btn:hover { background: #0C447C; }
+  .gen-btn:disabled { background: #ccc; cursor: not-allowed; }
+
+  /* ローディング */
+  .loading-wrap { text-align: center; padding: 2rem; }
+  .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid #e0e0e0;
+    border-top-color: #185FA5;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 12px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { font-size: 14px; color: #888; }
+
+  /* 結果エリア */
+  .result-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 1px solid #e8e8e8;
+    padding: 1.25rem;
+    margin-top: 1rem;
+  }
+  .result-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .result-tag { font-size: 11px; font-weight: 700; color: #888; letter-spacing: 0.05em; }
+  .counter { font-size: 12px; font-weight: 700; }
+  .ok { color: #0F6E56; }
+  .warn { color: #BA7517; }
+  .over { color: #A32D2D; }
+
+  .out-title-box {
+    font-size: 17px;
+    font-weight: 700;
+    color: #1a1a1a;
+    padding: 12px 14px;
+    border-radius: 8px;
+    border: 1px solid #e8e8e8;
+    background: #f9f9f9;
+    margin-bottom: 8px;
+    line-height: 1.5;
+  }
+  .out-body-box {
+    font-size: 14px;
+    color: #1a1a1a;
+    padding: 14px;
+    border-radius: 8px;
+    border: 1px solid #e8e8e8;
+    background: #f9f9f9;
+    margin-bottom: 8px;
+    line-height: 1.9;
+    white-space: pre-wrap;
+  }
+
+  .divider { border: none; border-top: 1px solid #ebebeb; margin: 1rem 0; }
+
+  .copy-btn {
+    width: 100%;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #1a1a1a;
+    font-size: 13px;
+    cursor: pointer;
+    margin-bottom: 8px;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { background: #f5f5f5; }
+  .copy-btn.copied { border-color: #0F6E56; color: #0F6E56; background: #EAF3DE; }
+
+  .regen-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 2px solid #185FA5;
+    background: #fff;
+    color: #185FA5;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    margin-bottom: 8px;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .regen-btn:hover { background: #E6F1FB; }
+
+  .back-btn {
+    width: 100%;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid #ddd;
+    background: #fff;
+    color: #888;
+    font-size: 14px;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .back-btn:hover { background: #f5f5f5; }
+
+  .error-msg {
+    background: #FCEBEB;
+    border: 1px solid #F7C1C1;
+    border-radius: 10px;
+    padding: 1rem;
+    font-size: 13px;
+    color: #A32D2D;
+    margin-top: 1rem;
+    line-height: 1.6;
+  }
+
+  @media (max-width: 400px) {
+    .two-col { grid-template-columns: 1fr; }
+    .cat-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="badge">HPBブログ自動生成</div>
+  <h1>今日の投稿、つぶやくだけ 😊</h1>
+
+  <!-- APIキーはJS内に直接記載済み -->
+
+  <!-- 院名・名前 -->
+  <div class="card">
+    <p class="step-label">1. 院名・名前</p>
+    <p class="hint">冒頭の挨拶に使います。入力後は自動保存されます。</p>
+    <div class="two-col">
+      <div class="field-wrap">
+        <span class="field-label">院名</span>
+        <input type="text" id="salon" placeholder="例：むさし整骨院下大利院" oninput="updatePreview(); save('salon')" />
+      </div>
+      <div class="field-wrap">
+        <span class="field-label">名前</span>
+        <input type="text" id="name" placeholder="例：田中" oninput="updatePreview(); save('name')" />
+      </div>
+    </div>
+    <div class="preview-box" id="preview">院名・名前を入力すると冒頭イメージが表示されます</div>
+  </div>
+
+  <!-- 地域名 -->
+  <div class="card">
+    <p class="step-label">2. サロンの地域名</p>
+    <p class="hint">ブログ本文の中で自然に活かします。</p>
+    <input type="text" id="region" placeholder="例：大野城、博多区、関内" oninput="save('region')" />
+  </div>
+
+  <!-- カテゴリ -->
+  <div class="card">
+    <p class="step-label">3. カテゴリを選ぶ</p>
+    <div class="cat-grid">
+      <button class="cat-btn" data-cat="症状系"
+        data-examples='["肩こりがなかなか改善しない理由","腰痛が朝つらい人の共通点","坐骨神経痛と姿勢の関係","頭痛と首肩こりのつながり"]'
+        onclick="selectCat(this)">
+        <span class="cat-icon">🦴</span>
+        <span class="cat-name">症状系</span>
+        <span class="cat-desc">肩こり・腰痛・坐骨神経痛など原因・解説</span>
+      </button>
+      <button class="cat-btn" data-cat="季節系"
+        data-examples='["春の新生活で首肩こりが増える","梅雨時期にだるさや頭痛が出やすい理由","夏の冷房で足がむくみやすい方へ","秋バテで自律神経が乱れやすい時期"]'
+        onclick="selectCat(this)">
+        <span class="cat-icon">🌸</span>
+        <span class="cat-name">季節系</span>
+        <span class="cat-desc">季節・気候にまつわる症状・ニーズ</span>
+      </button>
+      <button class="cat-btn" data-cat="お役立ち"
+        data-examples='["デスクワーク中にできる肩こり対策","寝る前30秒の骨盤まわりストレッチ","むくみやすい人が気をつけたい習慣","スマホ首を防ぐ座り方"]'
+        onclick="selectCat(this)">
+        <span class="cat-icon">📋</span>
+        <span class="cat-name">お役立ち</span>
+        <span class="cat-desc">セルフケア・生活習慣のアドバイス</span>
+      </button>
+      <button class="cat-btn" data-cat="共感・患者ストーリー"
+        data-examples='["長時間座るのがつらかった方が笑顔で帰られた","首が回らず不安だった方が安心されたお話","初めての整体で緊張されていた方のお声","部活帰りの学生さんに喜ばれたケア"]'
+        onclick="selectCat(this)">
+        <span class="cat-icon">💬</span>
+        <span class="cat-name">共感・患者ストーリー</span>
+        <span class="cat-desc">患者さんのエピソード・お声・変化</span>
+      </button>
+    </div>
+    <div class="example-section" id="example-section">
+      <p class="hint" style="margin-top:10px;">ヒント例（タップで入力欄にセット）</p>
+      <div class="example-chips" id="example-chips"></div>
+    </div>
+  </div>
+
+  <!-- メモ入力 -->
+  <div class="card">
+    <p class="step-label">4. つぶやく（ひとことでOK）</p>
+    <p class="hint">思ったことをそのままで大丈夫です😊　AIが整えてブログにします。</p>
+    <textarea id="memo" placeholder="カテゴリを選ぶとヒント例が出ます。そのままつぶやいてください。"></textarea>
+    <div class="char-hint" id="char-hint">0字</div>
+
+    <div class="voice-row">
+      <button class="vbtn" id="vbtn" onclick="toggleVoice()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="9" y="2" width="6" height="11" rx="3"/>
+          <path d="M5 10a7 7 0 0 0 14 0"/>
+          <line x1="12" y1="19" x2="12" y2="23"/>
+          <line x1="8" y1="23" x2="16" y2="23"/>
+        </svg>
+        音声で入力する
+      </button>
+      <span class="vstatus" id="vstatus"></span>
+    </div>
+  </div>
+
+  <button class="gen-btn" id="gbtn" onclick="generate()">ブログを生成する →</button>
+
+  <!-- 結果エリア -->
+  <div id="result-area"></div>
+
+</div>
+
+<script>
+/* =====================================================
+   ★★★ APIキーをここに貼り付けてください ★★★
+   https://console.anthropic.com/ で取得できます
+   例: const API_KEY = 'sk-ant-api03-XXXXXXXXXXXX';
+   ===================================================== */
+const API_KEY = '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';
+
+let selectedCat = null;
+let recog = null, isRec = false;
+
+/* ---- ローカルストレージ（院名・名前・地域を保存） ---- */
+function save(key) {
+  try { localStorage.setItem('hpb_' + key, document.getElementById(key).value); } catch(e) {}
+}
+function load(key) {
+  try { return localStorage.getItem('hpb_' + key) || ''; } catch(e) { return ''; }
+}
+
+/* 初期ロード */
+document.getElementById('salon').value  = load('salon');
+document.getElementById('name').value   = load('name');
+document.getElementById('region').value = load('region');
+updatePreview();
+
+/* 冒頭プレビュー */
+function updatePreview() {
+  const s = document.getElementById('salon').value.trim();
+  const n = document.getElementById('name').value.trim();
+  const box = document.getElementById('preview');
+  if (!s && !n) {
+    box.innerHTML = '院名・名前を入力すると冒頭イメージが表示されます';
+    box.style.color = '#aaa';
+    return;
+  }
+  const sText = s || '〇〇整骨院';
+  const nText = n ? `の${n}` : '';
+  box.innerHTML = `冒頭：<span class="preview-text">みなさん、こんにちは～！${sText}${nText}です！😊</span>`;
+  box.style.color = '#1a1a1a';
+}
+
+/* カテゴリ選択 */
+function selectCat(btn) {
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  selectedCat = btn.dataset.cat;
+
+  const examples = JSON.parse(btn.dataset.examples);
+  const chips = document.getElementById('example-chips');
+  chips.innerHTML = '';
+  examples.forEach(ex => {
+    const c = document.createElement('span');
+    c.className = 'ex-chip';
+    c.textContent = ex;
+    c.onclick = () => {
+      document.getElementById('memo').value = ex;
+      document.getElementById('char-hint').textContent = ex.length + '字';
+    };
+    chips.appendChild(c);
+  });
+  document.getElementById('example-section').style.display = 'block';
+}
+
+/* 文字数カウント */
+document.getElementById('memo').addEventListener('input', function() {
+  document.getElementById('char-hint').textContent = this.value.length + '字';
+});
+
+/* 音声入力 */
+function toggleVoice() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { document.getElementById('vstatus').textContent = 'このブラウザは音声入力非対応です'; return; }
+  if (isRec) { recog && recog.stop(); return; }
+
+  recog = new SR();
+  recog.lang = 'ja-JP';
+  recog.continuous = false;
+  recog.interimResults = true;
+
+  recog.onstart = () => {
+    isRec = true;
+    const b = document.getElementById('vbtn');
+    b.classList.add('rec');
+    b.innerHTML = '<span class="dot"></span> 録音中（タップで停止）';
+    document.getElementById('vstatus').textContent = '話しかけてください...';
+  };
+  recog.onresult = (e) => {
+    let t = '';
+    for (let i = 0; i < e.results.length; i++) t += e.results[i][0].transcript;
+    document.getElementById('memo').value = t;
+    document.getElementById('char-hint').textContent = t.length + '字';
+  };
+  recog.onend = () => {
+    isRec = false;
+    const b = document.getElementById('vbtn');
+    b.classList.remove('rec');
+    b.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <rect x="9" y="2" width="6" height="11" rx="3"/>
+      <path d="M5 10a7 7 0 0 0 14 0"/>
+      <line x1="12" y1="19" x2="12" y2="23"/>
+      <line x1="8" y1="23" x2="16" y2="23"/>
+    </svg> 音声で入力する`;
+    document.getElementById('vstatus').textContent = '';
+  };
+  recog.start();
+}
+
+/* ブログ生成 */
+async function generate() {
+  const apiKey = API_KEY;
+  if (!apiKey || apiKey.includes('ここに')) { alert('HTMLファイルにAPIキーを設定してください'); return; }
+  if (!selectedCat) { alert('カテゴリを選んでください'); return; }
+  const memo = document.getElementById('memo').value.trim();
+  if (!memo) { alert('つぶやきを入力してください'); return; }
+
+  const salon  = document.getElementById('salon').value.trim()  || '当院';
+  const name   = document.getElementById('name').value.trim();
+  const region = document.getElementById('region').value.trim();
+
+  const opening = name
+    ? `みなさん、こんにちは～！${salon}の${name}です！😊`
+    : `みなさん、こんにちは～！${salon}です！😊`;
+
+  const regionText = region ? `【地域：${region}】\n` : '';
+
+  const gbtn = document.getElementById('gbtn');
+  gbtn.disabled = true;
+  gbtn.textContent = '生成中...';
+
+  const resultArea = document.getElementById('result-area');
+  resultArea.innerHTML = `
+    <div class="result-card">
+      <div class="loading-wrap">
+        <div class="spinner"></div>
+        <p class="loading-text">AIがブログを作成しています...</p>
+      </div>
+    </div>`;
+
+  const prompt = `以下の条件でホットペッパービューティーのブログを作成してください。
+
+【カテゴリ】${selectedCat}
+${regionText}【先生のメモ】${memo}
+
+【冒頭の書き出し（必ずこの一文から始めること）】
+${opening}
+
+【文体・スタイルの条件】
+- 冒頭の挨拶のあと、話しかけるような親しみやすい文体で続ける
+- 改行を多めに入れて、余白を意識した読みやすいレイアウト
+- 絵文字を自然に使う（😊🙌✨など。多すぎず、ポイントで）
+- 「…」や「——」など余韻のある表現も積極的に使う
+- 難しい言葉は使わず、患者さんがスッと読める言葉で
+- 宣伝くさくなりすぎない、読み物トーン
+
+【構成】
+①冒頭の挨拶（指定の一文から始める）
+②共感・問いかけ（読者が「わかる！」となる書き出し）
+③原因・解説（やさしい言葉で）
+④当院のアプローチ（押しつけがましくなく）
+⑤締めのひとこと（温かく背中を押す感じで）
+
+【文字数条件】
+- タイトル：25文字以内（厳守）
+- 本文：850〜900文字（冒頭挨拶含む。900文字を絶対に超えないこと）
+
+【禁止事項】
+- 「ホットペッパー」「HPB」は使わない
+- 文字数オーバーしない
+
+【出力形式】以下のJSON形式のみで返答。説明・バッククォートは一切含めないこと:
+{"title":"タイトル25字以内","body":"本文850〜900字"}`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await res.json();
+    if (data.error) throw new Error(data.error.message);
+
+    const raw = data.content.map(i => i.text || '').join('');
+    const cleaned = raw.replace(/```json|```/g, '').trim();
+    const parsed = JSON.parse(cleaned);
+    showResult(parsed.title, parsed.body);
+
+  } catch(e) {
+    resultArea.innerHTML = `
+      <div class="error-msg">
+        ⚠️ エラーが発生しました。<br>
+        APIキーを確認してもう一度お試しください。<br>
+        <small style="color:#c05050;">${e.message}</small>
+      </div>`;
+  }
+
+  gbtn.disabled = false;
+  gbtn.textContent = 'ブログを生成する →';
+}
+
+/* 結果表示 */
+function showResult(title, body) {
+  const tLen = title.length;
+  const bLen = body.length;
+  const tCls = tLen <= 25 ? 'ok' : 'over';
+  const bCls = bLen > 900 ? 'over' : (bLen >= 800 ? 'ok' : 'warn');
+
+  document.getElementById('result-area').innerHTML = `
+    <div class="result-card">
+      <div class="result-header">
+        <span class="result-tag">TITLE</span>
+        <span class="counter ${tCls}">${tLen} / 25字</span>
+      </div>
+      <div class="out-title-box" id="out-title">${esc(title)}</div>
+      <button class="copy-btn" onclick="doCopy('out-title', this, 'タイトルをコピー')">タイトルをコピー</button>
+
+      <hr class="divider">
+
+      <div class="result-header">
+        <span class="result-tag">BODY</span>
+        <span class="counter ${bCls}">${bLen} / 900字</span>
+      </div>
+      <div class="out-body-box" id="out-body">${esc(body)}</div>
+      <button class="copy-btn" onclick="doCopy('out-body', this, '本文をコピー')">本文をコピー</button>
+      <button class="copy-btn" onclick="copyAll(this)">タイトル＋本文をまとめてコピー</button>
+
+      <hr class="divider">
+
+      <button class="regen-btn" onclick="generate()">別パターンを生成する ↺</button>
+      <button class="back-btn" onclick="document.getElementById('result-area').innerHTML=''">← 入力に戻る</button>
+    </div>`;
+
+  document.getElementById('result-area').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function esc(s) {
+  return String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
+async function doCopy(id, btn, label) {
+  await navigator.clipboard.writeText(document.getElementById(id).textContent);
+  btn.classList.add('copied');
+  btn.textContent = 'コピーしました！✓';
+  setTimeout(() => { btn.classList.remove('copied'); btn.textContent = label; }, 2000);
+}
+
+async function copyAll(btn) {
+  const t = document.getElementById('out-title').textContent;
+  const b = document.getElementById('out-body').textContent;
+  await navigator.clipboard.writeText(t + '\n\n' + b);
+  btn.classList.add('copied');
+  btn.textContent = 'コピーしました！✓';
+  setTimeout(() => { btn.classList.remove('copied'); btn.textContent = 'タイトル＋本文をまとめてコピー'; }, 2000);
+}
+</script>
+</body>
+</html>
