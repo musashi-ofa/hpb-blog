@@ -408,12 +408,7 @@
 </div>
 
 <script>
-/* =====================================================
-   ★★★ APIキーをここに貼り付けてください ★★★
-   https://console.anthropic.com/ で取得できます
-   例: const API_KEY = 'sk-ant-api03-XXXXXXXXXXXX';
-   ===================================================== */
-const API_KEY = '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';
+/* APIキーはNetlifyの環境変数で管理（コードには書かない） */
 
 let selectedCat = null;
 let recog = null, isRec = false;
@@ -516,8 +511,6 @@ function toggleVoice() {
 
 /* ブログ生成 */
 async function generate() {
-  const apiKey = API_KEY;
-  if (!apiKey || apiKey.includes('ここに')) { alert('HTMLファイルにAPIキーを設定してください'); return; }
   if (!selectedCat) { alert('カテゴリを選んでください'); return; }
   const memo = document.getElementById('memo').value.trim();
   if (!memo) { alert('つぶやきを入力してください'); return; }
@@ -580,19 +573,10 @@ ${opening}
 {"title":"タイトル25字以内","body":"本文850〜900字"}`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('/.netlify/functions/generate', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'anthropic-dangerous-direct-browser-access': 'true'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1500,
-        messages: [{ role: 'user', content: prompt }]
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
     });
 
     const data = await res.json();
