@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>HPBブログ自動生成</title>
+ <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -306,11 +307,37 @@
     .two-col { grid-template-columns: 1fr; }
     .cat-grid { grid-template-columns: 1fr; }
   }
+ .logout-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.25rem;
+  padding: 10px 14px;
+  background: #f8f8f8;
+  border-radius: 10px;
+  border: 1px solid #e8e8e8;
+}
+.logout-bar .user-email { font-size: 12px; color: #888; }
+.logout-btn {
+  font-size: 12px;
+  padding: 5px 12px;
+  border-radius: 6px;
+  border: 1px solid #ddd;
+  background: #fff;
+  color: #888;
+  cursor: pointer;
+}
+.logout-btn:hover { background: #f5f5f5; color: #A32D2D; border-color: #A32D2D; }
+#main-content { display: none; }
 </style>
 </head>
 <body>
 <div class="container">
-
+<div id="main-content">
+<div class="logout-bar">
+  <span class="user-email" id="user-email"></span>
+  <button class="logout-btn" onclick="netlifyIdentity.logout()">ログアウト</button>
+</div>
   <div class="badge">HPBブログ自動生成</div>
   <h1>今日の投稿、つぶやくだけ 😊</h1>
 
@@ -404,7 +431,7 @@
 
   <!-- 結果エリア -->
   <div id="result-area"></div>
-
+<!-- /main-content -->
 </div>
 
 <script>
@@ -656,6 +683,21 @@ async function copyAll(btn) {
   btn.classList.add('copied');
   btn.textContent = 'コピーしました！✓';
   setTimeout(() => { btn.classList.remove('copied'); btn.textContent = 'タイトル＋本文をまとめてコピー'; }, 2000);
+}
+ netlifyIdentity.on('init', user => {
+  if (user) { showApp(user); } else { netlifyIdentity.open(); }
+});
+netlifyIdentity.on('login', user => {
+  showApp(user);
+  netlifyIdentity.close();
+});
+netlifyIdentity.on('logout', () => {
+  document.getElementById('main-content').style.display = 'none';
+  netlifyIdentity.open();
+});
+function showApp(user) {
+  document.getElementById('main-content').style.display = 'block';
+  document.getElementById('user-email').textContent = '👤 ' + user.email;
 }
 </script>
 </body>
